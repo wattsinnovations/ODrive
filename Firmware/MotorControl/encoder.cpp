@@ -1,6 +1,16 @@
 
 #include "odrive_main.h"
 
+Encoder* Encoder::instance_ = nullptr;
+
+// For input capture we look at count in CCR4
+extern "C" void watts_encoder_index_cb()
+{
+    // TODO: measure
+    if (Encoder::instance_) {
+        Encoder::instance_->enc_index_cb();
+    }
+}
 
 Encoder::Encoder(const EncoderHardwareConfig_t& hw_config,
                 Config_t& config, const Motor::Config_t& motor_config) :
@@ -15,15 +25,20 @@ Encoder::Encoder(const EncoderHardwareConfig_t& hw_config,
         if (motor_config.motor_type == Motor::MOTOR_TYPE_ACIM)
             is_ready_ = true;
     }
+
+    instance_ = this;
 }
 
-static void enc_index_cb_wrapper(void* ctx) {
-    reinterpret_cast<Encoder*>(ctx)->enc_index_cb();
-}
+// static void enc_index_cb_wrapper(void* ctx) {
+//     reinterpret_cast<Encoder*>(ctx)->enc_index_cb();
+// }
 
 void Encoder::setup() {
     HAL_TIM_Encoder_Start(hw_config_.timer, TIM_CHANNEL_ALL);
-    set_idx_subscribe();
+    HAL_TIM_IC_Start(hw_config_.timer, TIM_CHANNEL_4);
+    HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM3_IRQn);
+    // set_idx_subscribe();
 
     mode_ = config_.mode;
     if(mode_ & MODE_FLAG_ABS){
@@ -73,17 +88,18 @@ void Encoder::enc_index_cb() {
     }
 
     // Disable interrupt
-    GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
+    HAL_NVIC_DisableIRQ(TIM3_IRQn);
+    // GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
 }
 
-void Encoder::set_idx_subscribe(bool override_enable) {
-    if (config_.use_index && (override_enable || !config_.find_idx_on_lockin_only)) {
-        GPIO_subscribe(hw_config_.index_port, hw_config_.index_pin, GPIO_PULLDOWN,
-                enc_index_cb_wrapper, this);
-    } else if (!config_.use_index || config_.find_idx_on_lockin_only) {
-        GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
-    }
-}
+// void Encoder::set_idx_subscribe(bool override_enable) {
+//     if (config_.use_index && (override_enable || !config_.find_idx_on_lockin_only)) {
+//         GPIO_subscribe(hw_config_.index_port, hw_config_.index_pin, GPIO_PULLDOWN,
+//                 enc_index_cb_wrapper, this);
+//     } else if (!config_.use_index || config_.find_idx_on_lockin_only) {
+//         GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
+//     }
+// }
 
 void Encoder::update_pll_gains() {
     pll_kp_ = 2.0f * config_.bandwidth;  // basic conversion to discrete time
@@ -143,7 +159,7 @@ bool Encoder::run_index_search() {
     if (!config_.idx_search_unidirectional && axis_->motor_.config_.direction == 0) {
         axis_->motor_.config_.direction = 1;
     }
-    set_idx_subscribe();
+    // set_idx_subscribe();
 
     bool status = axis_->run_lockin_spin(axis_->config_.calibration_lockin);
     return status;

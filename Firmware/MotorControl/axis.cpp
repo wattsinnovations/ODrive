@@ -271,8 +271,8 @@ bool Axis::run_lockin_spin(const LockinConfig_t &lockin_config) {
         return !spin_done(true); //vel_override to go to next phase
     });
 
-    if (!encoder_.index_found_)
-        encoder_.set_idx_subscribe(true);
+    // if (!encoder_.index_found_)
+    //     encoder_.set_idx_subscribe(true);
 
     // Constant speed
     if (!spin_done()) {
