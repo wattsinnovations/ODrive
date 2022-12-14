@@ -50,10 +50,34 @@ bool Encoder::do_checks(){
 // Hardware Dependent
 //--------------------
 
+void Encoder::enc_index_cb()
+{
+    // If it's a rising edge, start the timer
+    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
+        HAL_TIM_Base_Start(&htim6);
+
+    // Otherwise stop the timer and check the value
+    } else {
+        HAL_TIM_Base_Stop(&htim6);
+
+        if (htim6.State == HAL_TIM_STATE_TIMEOUT) {
+            // TODO: index search failed because IO was high for too long, try again
+            return;
+        }
+
+        uint32_t count = htim6.Instance->CNT;
+
+        // Between 0.5 and 5 ms
+        if (count > 500 && count < 5000) {
+            enc_index_cb_original();
+        }
+    }
+}
+
 // Triggered when an encoder passes over the "Index" pin
 // TODO: only arm index edge interrupt when we know encoder has powered up
 // (maybe by attaching the interrupt on start search, synergistic with following)
-void Encoder::enc_index_cb() {
+void Encoder::enc_index_cb_original() {
     if (config_.use_index) {
         set_circular_count(0, false);
         if (config_.zero_count_on_find_idx)
@@ -79,7 +103,7 @@ void Encoder::enc_index_cb() {
 void Encoder::set_idx_subscribe(bool override_enable) {
     if (config_.use_index && (override_enable || !config_.find_idx_on_lockin_only)) {
         GPIO_subscribe(hw_config_.index_port, hw_config_.index_pin, GPIO_PULLDOWN,
-                enc_index_cb_wrapper, this);
+                enc_index_cb_wrapper, this, true);
     } else if (!config_.use_index || config_.find_idx_on_lockin_only) {
         GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
     }
