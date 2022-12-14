@@ -54,23 +54,23 @@ void Encoder::enc_index_cb()
 {
     // If it's a rising edge, start the timer
     if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
-        HAL_TIM_Base_Start(&htim6);
-
+        HAL_TIM_Base_Start_IT(&htim6);
     // Otherwise stop the timer and check the value
     } else {
-        HAL_TIM_Base_Stop(&htim6);
 
-        if (htim6.State == HAL_TIM_STATE_TIMEOUT) {
+        if (htim6.State != HAL_TIM_STATE_TIMEOUT) {
+            uint32_t count = htim6.Instance->CNT;
+            // Between 0.5 and 5 ms
+            if (count > 500 && count < 5000) {
+                enc_index_cb_original();
+            }
+
+        } else {
             // TODO: index search failed because IO was high for too long, try again
-            return;
+
         }
 
-        uint32_t count = htim6.Instance->CNT;
-
-        // Between 0.5 and 5 ms
-        if (count > 500 && count < 5000) {
-            enc_index_cb_original();
-        }
+        HAL_TIM_Base_Stop_IT(&htim6);
     }
 }
 
@@ -251,7 +251,7 @@ bool Encoder::run_offset_calibration() {
         axis_->motor_.log_timing(TIMING_LOG_ENC_CALIB);
 
         encvaluesum += shadow_count_;
-        
+
         return ++i < num_steps;
     });
     if (axis_->error_ != Axis::ERROR_NONE)
@@ -291,7 +291,7 @@ bool Encoder::run_offset_calibration() {
         axis_->motor_.log_timing(TIMING_LOG_ENC_CALIB);
 
         encvaluesum += shadow_count_;
-        
+
         return ++i < num_steps;
     });
     if (axis_->error_ != Axis::ERROR_NONE)
@@ -499,10 +499,10 @@ bool Encoder::update() {
             if (delta_enc > 6283/2)
                 delta_enc -= 6283;
         } break;
-        
+
         case MODE_SPI_ABS_RLS:
         case MODE_SPI_ABS_AMS:
-        case MODE_SPI_ABS_CUI: 
+        case MODE_SPI_ABS_CUI:
         case MODE_SPI_ABS_AEAT: {
             if (abs_spi_pos_updated_ == false) {
                 // Low pass filter the error
