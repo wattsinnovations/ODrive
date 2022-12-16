@@ -58,19 +58,14 @@ void Encoder::enc_index_cb()
     // Otherwise stop the timer and check the value
     } else {
 
-        if (htim6.State != HAL_TIM_STATE_TIMEOUT) {
-            uint32_t count = htim6.Instance->CNT;
-            // Between 0.5 and 5 ms
-            if (count > 500 && count < 5000) {
-                enc_index_cb_original();
-            }
-
-        } else {
-            // TODO: index search failed because IO was high for too long, try again
-
+        uint16_t count = htim6.Instance->CNT;
+        // Between 0.5 and 5 ms
+        if (count > 500 && count < 15000) {
+            enc_index_cb_original();
         }
 
         HAL_TIM_Base_Stop_IT(&htim6);
+        htim6.Instance->CNT &= 0x0;
     }
 }
 
