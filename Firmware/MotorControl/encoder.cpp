@@ -52,14 +52,13 @@ bool Encoder::do_checks(){
 
 void Encoder::enc_index_cb()
 {
-    // If it's a rising edge, start the timer
     if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
         HAL_TIM_Base_Start_IT(&htim6);
-    // Otherwise stop the timer and check the value
+
     } else {
 
         uint16_t count = htim6.Instance->CNT;
-        // Between 0.5 and 5 ms
+        // Between 0.5 and 15 ms
         if (count > 500 && count < 15000) {
             enc_index_cb_original();
         }
@@ -98,7 +97,7 @@ void Encoder::enc_index_cb_original() {
 void Encoder::set_idx_subscribe(bool override_enable) {
     if (config_.use_index && (override_enable || !config_.find_idx_on_lockin_only)) {
         GPIO_subscribe(hw_config_.index_port, hw_config_.index_pin, GPIO_PULLDOWN,
-                enc_index_cb_wrapper, this, true);
+                enc_index_cb_wrapper, this, GPIO_MODE_IT_RISING_FALLING);
     } else if (!config_.use_index || config_.find_idx_on_lockin_only) {
         GPIO_unsubscribe(hw_config_.index_port, hw_config_.index_pin);
     }
