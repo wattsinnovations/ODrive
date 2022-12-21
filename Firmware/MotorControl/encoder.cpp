@@ -53,6 +53,7 @@ bool Encoder::do_checks(){
 void Encoder::enc_index_cb()
 {
     if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
+        htim6.Instance->CNT &= 0x0;
         HAL_TIM_Base_Start_IT(&htim6);
 
     } else {
