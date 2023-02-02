@@ -33,13 +33,16 @@ def main():
         # odrv0.axis0.trap_traj.config.decel_limit = 3.5
         # odrv0.axis0.controller.config.enable_current_mode_vel_limit = True
 
-        current_position = odrv0.axis0.encoder.pos_estimate
-        print("current_position " + str(current_position))
-        odrv0.axis0.controller.input_vel = 0
-        odrv0.axis0.controller.input_pos = current_position
-        odrv0.axis0.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+        # current_position = odrv0.axis0.encoder.pos_estimate
+        # print("current_position " + str(current_position))
+
         odrv0.axis0.controller.config.input_mode = INPUT_MODE_PASSTHROUGH
-        odrv0.axis0.controller.input_pos = current_position
+        odrv0.axis0.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+
+        # odrv0.axis0.controller.input_vel = 0
+        # odrv0.axis0.controller.input_pos = current_position
+
+        # odrv0.axis0.controller.input_pos = current_position
         odrv0.axis0.controller.input_vel = 0.75
 
         # Enable motor
@@ -50,16 +53,16 @@ def main():
         time.sleep(3)
 
         speed = odrv0.axis0.encoder.vel_estimate
-        vel_setpoint = odrv0.axis0.controller.input_vel
-        pos_setpoint = odrv0.axis0.controller.input_pos
-        input_mode = odrv0.axis0.controller.config.input_mode
-        control_mode = odrv0.axis0.controller.config.control_mode
+        # vel_setpoint = odrv0.axis0.controller.input_vel
+        # pos_setpoint = odrv0.axis0.controller.input_pos
+        # input_mode = odrv0.axis0.controller.config.input_mode
+        # control_mode = odrv0.axis0.controller.config.control_mode
 
-        print("speed -- " + str(speed));
-        print("vel_setpoint -- " + str(vel_setpoint))
-        print("pos_setpoint -- " + str(pos_setpoint))
-        print("input_mode -- " + str(input_mode))
-        print("control_mode -- " + str(control_mode))
+        # print("speed -- " + str(speed));
+        # print("vel_setpoint -- " + str(vel_setpoint))
+        # print("pos_setpoint -- " + str(pos_setpoint))
+        # print("input_mode -- " + str(input_mode))
+        # print("control_mode -- " + str(control_mode))
 
         # TODO:
         # - count the number of cycles before issue occurs
