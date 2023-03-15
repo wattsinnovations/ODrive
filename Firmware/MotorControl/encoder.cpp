@@ -49,9 +49,13 @@ bool Encoder::do_checks(){
 //--------------------
 // Hardware Dependent
 //--------------------
-
+static bool _index_search_complete = false;
 void Encoder::enc_index_cb()
 {
+    if(_index_search_complete) {
+        return;
+    }
+
     if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9) == GPIO_PIN_SET) {
         htim6.Instance->CNT &= 0x0;
         HAL_TIM_Base_Start_IT(&htim6);
@@ -62,6 +66,7 @@ void Encoder::enc_index_cb()
         // Between 0.5 and 15 ms
         if (count > 500 && count < 15000) {
             enc_index_cb_original();
+            _index_search_complete = true;
         }
 
         HAL_TIM_Base_Stop_IT(&htim6);
