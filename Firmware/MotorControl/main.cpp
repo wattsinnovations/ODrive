@@ -245,6 +245,11 @@ void vApplicationIdleHook(void) {
 }
 
 int odrive_main(void) {
+
+    // Jake: We will delay 1 second to avoid seeing the index signal pulse
+    // that happens  when it powers on
+    osDelay(1000);
+
     // Start ADC for temperature measurements and user measurements
     start_general_purpose_adc();
 
